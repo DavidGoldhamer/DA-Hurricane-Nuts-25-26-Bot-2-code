@@ -1,30 +1,69 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.graphics.Color;
+
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.CRServoImplEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorImplEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.ServoImplEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import android.app.Activity;
+import android.graphics.Color;
+import android.view.View;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.SwitchableLight;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 
 @TeleOp(name = "OPMODE_DEEZ_NUTS_V3")
 public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
-    ////////////private DcMotorImplEx launcherMotorLeft;
-    ///////////private DcMotorImplEx launcherMotorRight;
+
+    private CRServoImplEx intake;
+    private ServoImplEx linkage1;
+    private ServoImplEx linkage2;
+    private ServoImplEx linkage3;
+
+    private DcMotorImplEx launcherMotorLeft;
+    private DcMotorImplEx launcherMotorRight;
 
     private DcMotorImplEx frontRightDrive;
     private DcMotorImplEx frontLeftDrive;
     private DcMotorImplEx backRightDrive;
     private DcMotorImplEx backLeftDrive;
+    private NormalizedColorSensor colorSensor1;
+    private NormalizedColorSensor colorSensor2;
+    private NormalizedColorSensor colorSensor3;
+
 
     double frontLeftPower;
     double backLeftPower;
     double frontRightPower;
     double backRightPower;
 
+    float uppos = 1;
+    double downpos = 0.69;
+
+    String[] pattern = {"ppg", "pgp", "gpp"};
+    float patnum = 0;
+
+    double abcdef = 1;
+
+    String[] patternraw = {"a","a","a"};
+
+    String tempcolo = "";
     /**
      * This OpMode illustrates driving a 4-motor Omni-Directional (or Holonomic) robot.
      * This code will work with either a Mecanum-Drive or an X-Drive train.
@@ -48,15 +87,27 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         ElapsedTime runtime;
         double axial = 0;
         double lateral = 0;
-        float yaw;
+        double yaw;
         double max;
 
-        //////launcherMotorLeft = hardwareMap.get(DcMotorImplEx.class, "launcherMotorLeft");
-        ////////launcherMotorRight = hardwareMap.get(DcMotorImplEx.class, "launcherMotorRight");
+        double incrempad = 0.2;
+
+        boolean launcheractive = false;
+
+
+        intake = hardwareMap.get(CRServoImplEx.class, "intake");
+        linkage1 = hardwareMap.get(ServoImplEx.class, "linkage1");
+        linkage2 = hardwareMap.get(ServoImplEx.class, "linkage2");
+        linkage3 = hardwareMap.get(ServoImplEx.class, "linkage3");
+        launcherMotorLeft = hardwareMap.get(DcMotorImplEx.class, "launcherMotorLeft");
+        launcherMotorRight = hardwareMap.get(DcMotorImplEx.class, "launcherMotorRight");
         frontLeftDrive = hardwareMap.get(DcMotorImplEx.class, "frontLeftDrive");
         frontRightDrive = hardwareMap.get(DcMotorImplEx.class, "frontRightDrive");
         backLeftDrive = hardwareMap.get(DcMotorImplEx.class, "backLeftDrive");
         backRightDrive = hardwareMap.get(DcMotorImplEx.class, "backRightDrive");
+        colorSensor1 = hardwareMap.get(NormalizedColorSensor.class, "sensorColor1");
+        colorSensor2 = hardwareMap.get(NormalizedColorSensor.class, "sensorColor2");
+        colorSensor3 = hardwareMap.get(NormalizedColorSensor.class, "sensorColor3");
 
 
         runtime = new ElapsedTime();
@@ -75,50 +126,142 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         // Reverse the direction (flip FORWARD <-> REVERSE ) of any wheel that runs backward.
         // Keep testing until ALL the wheels move the robot forward when you push the left joystick forward.
         // <--- Click blue icon to see important note re. testing motor directions.
-        /////////launcherMotorLeft.setDirection(DcMotor.Direction.REVERSE);
-        /////////launcherMotorRight.setDirection(DcMotor.Direction.FORWARD);
+        launcherMotorLeft.setDirection(DcMotor.Direction.REVERSE);
+        launcherMotorRight.setDirection(DcMotor.Direction.REVERSE);
+
         frontLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         frontRightDrive.setDirection(DcMotor.Direction.FORWARD);
         backLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         backRightDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        frontLeftDrive.setZeroPowerBehavior(DcMotorImplEx.ZeroPowerBehavior.BRAKE);
+        frontRightDrive.setZeroPowerBehavior(DcMotorImplEx.ZeroPowerBehavior.BRAKE);
+        backLeftDrive.setZeroPowerBehavior(DcMotorImplEx.ZeroPowerBehavior.BRAKE);
+        backRightDrive.setZeroPowerBehavior(DcMotorImplEx.ZeroPowerBehavior.BRAKE);
+
+        launcherMotorRight.setZeroPowerBehavior(DcMotorImplEx.ZeroPowerBehavior.BRAKE);
+        launcherMotorLeft.setZeroPowerBehavior(DcMotorImplEx.ZeroPowerBehavior.BRAKE);
+
+        final float[] hsvValues = new float[3];
+
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
         waitForStart();
         runtime.reset();
+        float temppatnum = 0;
         // Run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             // Note: pushing stick forward gives negative value
-            double incrempad = 0.1;
+
+            // inccrement through the array for patterns
+            if (gamepad1.leftBumperWasPressed()) {
+                temppatnum += 1;
+                patnum = temppatnum % 3;
+            }
+            telemetry.addData("left bumper counter", patnum);
+
+            //actually launch sort
+            //if (gamepad1.rightBumperWasPressed()) {
+            //}
+
+            NormalizedRGBA colors1 = colorSensor1.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
+            Color.colorToHSV(colors1.toColor(), hsvValues);
+            telemetry.addData("color1", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+            tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
+            patternraw[0] = tempcolo;
+
+            NormalizedRGBA colors2 = colorSensor2.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
+            Color.colorToHSV(colors2.toColor(), hsvValues);
+            telemetry.addData("color2", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+            tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
+            patternraw[1] = tempcolo;
+
+            NormalizedRGBA colors3 = colorSensor3.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
+            Color.colorToHSV(colors3.toColor(), hsvValues);
+            telemetry.addData("color3", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+            tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
+            patternraw[2] = tempcolo;
+
+
+            if (patternraw[0] == "Green" && patnum == 2) {
+                linkage1func(true);
+            }
+
+
+            if (gamepad1.right_trigger == 1) {intakefunc(true);} else {intakefunc(false);}
+            telemetry.addData("rt: ", gamepad1.right_trigger);
+
+            linkage1func(gamepad1.x);
+            telemetry.addData("xx: ", linkage1.getPosition());
+            telemetry.addData("x: ", gamepad1.x);
+            linkage2func(gamepad1.a);
+            telemetry.addData("aa: ", linkage2.getPosition());
+            telemetry.addData("a: ", gamepad1.a);
+            linkage3func(gamepad1.b);
+            telemetry.addData("bb: ", linkage3.getPosition());
+            telemetry.addData("b: ", gamepad1.b);
+
+            //if (gamepad2.dpad_up) {abcdef += 0.01;sleep(10);}
+            //if (gamepad2.dpad_down) {abcdef -= 0.01;sleep(10);}
+            //if (abcdef > 1) {abcdef = 1;} else if (abcdef < 0.69) {abcdef = 0.69;}
+            //linkage1.setPosition(abcdef);
+            //linkage2.setPosition(abcdef);
+            //linkage3.setPosition(abcdef);
+            //telemetry.addData("ababababababaabab", abcdef);
+
+            if (gamepad1.right_trigger >= 0.9) {intake.setPower(1);}
+
+
+            // trying release but might be test
+            if (gamepad1.yWasReleased()) {launcheractive = !launcheractive;}
+            telemetry.addData("launcher toggle: ", launcheractive);
+
+            // setting launcher power
+            if (launcheractive) {
+                launcherMotorRight.setPower(1);
+                launcherMotorLeft.setPower(1);
+            } else {
+                launcherMotorLeft.setPower(0);
+                launcherMotorRight.setPower(0);
+            }
 
             //move forward and back
-            if (gamepad1.dpadUpWasPressed() || gamepad1.dpadDownWasPressed()) {
+            if (gamepad1.dpad_down || gamepad1.dpad_up) {
+                telemetry.addData("up/down:  ", "true");
                 //dpad up
-                if (gamepad1.dpadUpWasPressed()) {
+                if (gamepad1.dpad_up) {
                     axial = incrempad;
+                    telemetry.addData("up:  ", axial);
                     //dpad down \/
-                } else if (gamepad1.dpadDownWasPressed()) {
+                } else if (gamepad1.dpad_down) {
                     axial = -incrempad;
+                    telemetry.addData("down:  ", axial);
                 }
             } else {
                 // gamepad stick to move forwards and back
                 axial = -gamepad1.left_stick_y;
+                telemetry.addData("stick:  ", axial);
             }
 
 
             //drift left and right
-            if (gamepad1.dpadLeftWasPressed() || gamepad1.dpadRightWasPressed()) {
+            if (gamepad1.dpad_left || gamepad1.dpad_right) {
+                telemetry.addData("left/right:  ", "true");
                 //dpad left
-                if (gamepad1.dpadLeftWasPressed()) {
-                    lateral = incrempad;
-                    //dpad right \/
-                } else if (gamepad1.dpadRightWasPressed()) {
+                if (gamepad1.dpad_left) {
                     lateral = -incrempad;
+                    telemetry.addData("left:  ", lateral);
+                    //dpad right \/
+                } else if (gamepad1.dpad_right) {
+                    lateral = incrempad;
+                    telemetry.addData("right:  ", lateral);
                 }
             } else {
                 // gamepad stick to drift
                 lateral = gamepad1.left_stick_x;
+                telemetry.addData("stick:  ", lateral);
             }
 
             yaw = gamepad1.right_stick_x;
@@ -167,4 +310,53 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         frontRightPower = gamepad1.y ? 1 : 0;
         backRightPower = gamepad1.b ? 1 : 0;
     }
+
+
+
+    private void intakefunc(boolean on) {
+        if (on) {
+            intake.setPower(1);
+        } else {
+            intake.setPower(0);
+        }
+    }
+    private void linkage1func(boolean on) {
+        if (on) {
+            linkage1.setPosition(uppos);
+        } else {
+            linkage1.setPosition(downpos);
+        }
+    }
+
+    private void linkage2func(boolean on) {
+        if (on) {
+            linkage2.setPosition(uppos);
+        } else {
+            linkage2.setPosition(downpos);
+        }
+    }
+
+    private void linkage3func(boolean on) {
+        if (on) {
+            linkage3.setPosition(uppos);
+        } else {
+            linkage3.setPosition(downpos);
+        }
+    }
+
+    public static String determineColor(double h, double s, double v) {
+        // Check if hue falls within the green range (85° to 170°)
+        if (h >= 75 && h <= 170) {
+            return "Green" + " " + h + " " + s + " " + v;
+        }
+        // Check if hue falls within the purple range (260° to 320°)
+        else if (h >= 210 && h <= 320) {
+            return "Purple" + " " + h + " " + s + " " + v;
+        }
+        // If it's neither, return "Other"
+        else {
+            return "Other" + " " + h + " " + s + " " + v;
+        }
+    }
+
 }

@@ -54,10 +54,24 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     double backRightPower;
 
     float uppos = 1;
-    double downpos = 0.69;
+    double downpos = 0.70;
 
-    String[] pattern = {"ppg", "pgp", "gpp"};
+    private final String[] pattern = {"ppg", "pgp", "gpp"};
+    private final String[][] patternindividual = {
+            {"g","p","p"},
+            {"p","g","p"},
+            {"p","p","g"}
+    };
+
+    private String[][] patternindividuallive = {
+            {"","",""},
+            {"","",""},
+            {"","",""}
+    };
+
     float patnum = 0;
+
+
 
     double abcdef = 1;
 
@@ -346,16 +360,16 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
     public static String determineColor(double h, double s, double v) {
         // Check if hue falls within the green range (85° to 170°)
-        if (h >= 75 && h <= 170) {
-            return "Green" + " " + h + " " + s + " " + v;
+        if (h >= 75 && h <= 185) {
+            return "Green" + " h: " + h + " s: " + s + " v: " + v;
         }
         // Check if hue falls within the purple range (260° to 320°)
         else if (h >= 210 && h <= 320) {
-            return "Purple" + " " + h + " " + s + " " + v;
+            return "Purple" + " h: " + h + " s: " + s + " v: " + v;
         }
         // If it's neither, return "Other"
         else {
-            return "Other" + " " + h + " " + s + " " + v;
+            return "Other" + " h: " + h + " s: " + s + " v: " + v;
         }
     }
 

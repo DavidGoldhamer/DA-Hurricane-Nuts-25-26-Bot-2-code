@@ -54,26 +54,25 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     double backRightPower;
 
     float uppos = 1;
-    double downpos = 0.70;
+    double downpos = 0.72;
 
     private final String[] pattern = {"ppg", "pgp", "gpp"};
+
+    private int partofpattern = 0;
+
     private final String[][] patternindividual = {
             {"g","p","p"},
             {"p","g","p"},
             {"p","p","g"}
     };
 
-    private String[][] patternindividuallive = {
-            {"","",""},
-            {"","",""},
-            {"","",""}
-    };
+    private String[] patternindividuallive = {"","",""};
 
-    float patnum = 0;
+    private int patnum = 0;
 
 
 
-    double abcdef = 1;
+    private double abcdef = 1;
 
     String[] patternraw = {"a","a","a"};
 
@@ -163,7 +162,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         telemetry.update();
         waitForStart();
         runtime.reset();
-        float temppatnum = 0;
+        int temppatnum = 0;
         // Run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
             // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
@@ -185,23 +184,43 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             telemetry.addData("color1", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[0] = tempcolo;
+            patternindividuallive[0] = tempcolo;
 
             NormalizedRGBA colors2 = colorSensor2.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors2.toColor(), hsvValues);
             telemetry.addData("color2", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[1] = tempcolo;
+            patternindividuallive[1] = tempcolo;
+
 
             NormalizedRGBA colors3 = colorSensor3.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors3.toColor(), hsvValues);
             telemetry.addData("color3", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[2] = tempcolo;
+            patternindividuallive[2] = tempcolo;
 
 
-            if (patternraw[0] == "Green" && patnum == 2) {
-                linkage1func(true);
+
+            telemetry.addData("patternindividual", patternindividual[patnum][partofpattern]);
+            if (gamepad1.rightBumperWasPressed()) {
+                if (patternindividuallive[0] == patternindividual[patnum][partofpattern]) {
+                    linkage1func(true);
+                    sleep(100);
+                    linkage1func(false);
+                } else if (patternindividuallive[1] == patternindividual[patnum][partofpattern]) {
+                    linkage2func(true);
+                    sleep(100);
+                    linkage2func(false);
+                } else if (patternindividuallive[2] == patternindividual[patnum][partofpattern]) {
+                    linkage3func(true);
+                    sleep(100);
+                    linkage3func(false);
+                }
             }
+
+
 
 
             if (gamepad1.right_trigger == 1) {intakefunc(true);} else {intakefunc(false);}
@@ -361,15 +380,15 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     public static String determineColor(double h, double s, double v) {
         // Check if hue falls within the green range (85° to 170°)
         if (h >= 75 && h <= 185) {
-            return "Green" + " h: " + h + " s: " + s + " v: " + v;
+            return "g";
         }
         // Check if hue falls within the purple range (260° to 320°)
         else if (h >= 210 && h <= 320) {
-            return "Purple" + " h: " + h + " s: " + s + " v: " + v;
+            return "p";
         }
         // If it's neither, return "Other"
         else {
-            return "Other" + " h: " + h + " s: " + s + " v: " + v;
+            return "O";
         }
     }
 

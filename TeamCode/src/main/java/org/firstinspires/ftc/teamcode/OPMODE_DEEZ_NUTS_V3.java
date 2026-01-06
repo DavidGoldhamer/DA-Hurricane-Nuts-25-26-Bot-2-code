@@ -234,19 +234,30 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             if (gamepad1.right_trigger == 1) {intakefunc(true);} else {intakefunc(false);}
             telemetry.addData("rt: ", gamepad1.right_trigger);
 
+            telemetry.addData("xx: ", linkage1.getPosition());
+            telemetry.addData("aa: ", linkage2.getPosition());
+            telemetry.addData("bb: ", linkage3.getPosition());
+
             if (gamepad1.x || gamepad1.a || gamepad1.b) {
                 linkage1func(gamepad1.x);
-                telemetry.addData("xx: ", linkage1.getPosition());
                 telemetry.addData("x: ", gamepad1.x);
                 linkage2func(gamepad1.a);
-                telemetry.addData("aa: ", linkage2.getPosition());
                 telemetry.addData("a: ", gamepad1.a);
                 linkage3func(gamepad1.b);
-                telemetry.addData("bb: ", linkage3.getPosition());
                 telemetry.addData("b: ", gamepad1.b);
-            } else if (patternindividuallive[0] == "O" || patternindividuallive[1] == "O" || patternindividuallive[2] == "O") {
-                linkage_1_2_3_jitter(true);
+            } else if (patternindividuallive[0] == "O") {
+                linkage_1_jitter(true, 200,100);
+            } else if (patternindividuallive[1] == "O") {
+                linkage_2_jitter(true, 200,100);
+            } else if (patternindividuallive[2] == "O") {
+                linkage_3_jitter(true, 200,100);
+            } else {
+                linkage_1_jitter(false, 0,0);
+                linkage_2_jitter(false, 0,0);
+                linkage_3_jitter(false, 0,0);
             }
+
+
 
             //if (gamepad2.dpad_up) {abcdef += 0.01;sleep(10);}
             //if (gamepad2.dpad_down) {abcdef -= 0.01;sleep(10);}
@@ -389,17 +400,33 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         }
     }
 
-    private void linkage_1_2_3_jitter(boolean on) {
+    private void linkage_1_jitter(boolean on, int milli_up, int milli_down) {
         if (on) {
+            sleep(milli_up);
             linkage1.setPosition(servo_shift_pos_up);
+            sleep(milli_down);
             linkage1.setPosition(downpos);
-            linkage2.setPosition(servo_shift_pos_up);
-            linkage2.setPosition(downpos);
-            linkage3.setPosition(servo_shift_pos_up);
-            linkage3.setPosition(downpos);
         } else {
             linkage1.setPosition(downpos);
+        }
+    }
+
+    private void linkage_2_jitter(boolean on, int milli_up, int milli_down) {
+        if (on) {
+            sleep(milli_up);
+            linkage2.setPosition(servo_shift_pos_up);
+            sleep(milli_down);            linkage2.setPosition(downpos);
+        } else {
             linkage2.setPosition(downpos);
+        }
+    }
+
+    private void linkage_3_jitter(boolean on, int milli_up, int milli_down) {
+        if (on) {
+            sleep(milli_up);
+            linkage3.setPosition(servo_shift_pos_up);
+            sleep(milli_down);            linkage3.setPosition(downpos);
+        } else {
             linkage3.setPosition(downpos);
         }
     }

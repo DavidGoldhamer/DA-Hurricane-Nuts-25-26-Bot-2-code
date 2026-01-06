@@ -54,7 +54,9 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     double backRightPower;
 
     float uppos = 1;
-    double downpos = 0.72;
+    double downpos = 0.71;
+
+    double servo_shift_pos_up = 0.76;
 
     private final String[] pattern = {"ppg", "pgp", "gpp"};
 
@@ -172,8 +174,9 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             if (gamepad1.leftBumperWasPressed()) {
                 temppatnum += 1;
                 patnum = temppatnum % 3;
+                partofpattern = 0;
             }
-            telemetry.addData("left bumper counter", patnum);
+            telemetry.addData("left bumper counter (patnum)", patnum);
 
             //actually launch sort
             //if (gamepad1.rightBumperWasPressed()) {
@@ -202,22 +205,27 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             patternindividuallive[2] = tempcolo;
 
 
-
-            telemetry.addData("patternindividual", patternindividual[patnum][partofpattern]);
+            int sleep_time_auto = 500;
+            telemetry.addData("patternindividual: ", patternindividual[patnum][partofpattern]);
+            telemetry.addData( "partofpattern: ", partofpattern);
             if (gamepad1.rightBumperWasPressed()) {
                 if (patternindividuallive[0] == patternindividual[patnum][partofpattern]) {
                     linkage1func(true);
-                    sleep(100);
+                    sleep(sleep_time_auto);
                     linkage1func(false);
+                    partofpattern = (partofpattern + 1)%3;
                 } else if (patternindividuallive[1] == patternindividual[patnum][partofpattern]) {
                     linkage2func(true);
-                    sleep(100);
+                    sleep(sleep_time_auto);
                     linkage2func(false);
+                    partofpattern = (partofpattern + 1)%3;
                 } else if (patternindividuallive[2] == patternindividual[patnum][partofpattern]) {
                     linkage3func(true);
-                    sleep(100);
+                    sleep(sleep_time_auto);
                     linkage3func(false);
+                    partofpattern = (partofpattern + 1)%3;
                 }
+                sleep(sleep_time_auto);
             }
 
 
@@ -226,15 +234,19 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             if (gamepad1.right_trigger == 1) {intakefunc(true);} else {intakefunc(false);}
             telemetry.addData("rt: ", gamepad1.right_trigger);
 
-            linkage1func(gamepad1.x);
-            telemetry.addData("xx: ", linkage1.getPosition());
-            telemetry.addData("x: ", gamepad1.x);
-            linkage2func(gamepad1.a);
-            telemetry.addData("aa: ", linkage2.getPosition());
-            telemetry.addData("a: ", gamepad1.a);
-            linkage3func(gamepad1.b);
-            telemetry.addData("bb: ", linkage3.getPosition());
-            telemetry.addData("b: ", gamepad1.b);
+            if (gamepad1.x || gamepad1.a || gamepad1.b) {
+                linkage1func(gamepad1.x);
+                telemetry.addData("xx: ", linkage1.getPosition());
+                telemetry.addData("x: ", gamepad1.x);
+                linkage2func(gamepad1.a);
+                telemetry.addData("aa: ", linkage2.getPosition());
+                telemetry.addData("a: ", gamepad1.a);
+                linkage3func(gamepad1.b);
+                telemetry.addData("bb: ", linkage3.getPosition());
+                telemetry.addData("b: ", gamepad1.b);
+            } else if (patternindividuallive[0] == "O" || patternindividuallive[1] == "O" || patternindividuallive[2] == "O") {
+                linkage_1_2_3_jitter(true);
+            }
 
             //if (gamepad2.dpad_up) {abcdef += 0.01;sleep(10);}
             //if (gamepad2.dpad_down) {abcdef -= 0.01;sleep(10);}
@@ -373,6 +385,21 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         if (on) {
             linkage3.setPosition(uppos);
         } else {
+            linkage3.setPosition(downpos);
+        }
+    }
+
+    private void linkage_1_2_3_jitter(boolean on) {
+        if (on) {
+            linkage1.setPosition(servo_shift_pos_up);
+            linkage1.setPosition(downpos);
+            linkage2.setPosition(servo_shift_pos_up);
+            linkage2.setPosition(downpos);
+            linkage3.setPosition(servo_shift_pos_up);
+            linkage3.setPosition(downpos);
+        } else {
+            linkage1.setPosition(downpos);
+            linkage2.setPosition(downpos);
             linkage3.setPosition(downpos);
         }
     }

@@ -27,6 +27,10 @@ import com.qualcomm.robotcore.hardware.SwitchableLight;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.JavaUtil;
 
+import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 @TeleOp(name = "OPMODE_DEEZ_NUTS_V3")
 public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
@@ -54,7 +58,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     double backRightPower;
 
     float uppos = 1;
-    double downpos = 0.71;
+    double downpos = 0.70;
 
     double servo_shift_pos_up = 0.76;
 
@@ -79,6 +83,9 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     String[] patternraw = {"a","a","a"};
 
     String tempcolo = "";
+
+    private ElapsedTime jiggleTimer = new ElapsedTime();
+
     /**
      * This OpMode illustrates driving a 4-motor Omni-Directional (or Holonomic) robot.
      * This code will work with either a Mecanum-Drive or an X-Drive train.
@@ -182,14 +189,16 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             //if (gamepad1.rightBumperWasPressed()) {
             //}
 
-            NormalizedRGBA colors1 = colorSensor1.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
+            NormalizedRGBA colors1 = colorSensor1.getNormalizedColors();
+            Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors1.toColor(), hsvValues);
             telemetry.addData("color1", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[0] = tempcolo;
             patternindividuallive[0] = tempcolo;
 
-            NormalizedRGBA colors2 = colorSensor2.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
+            NormalizedRGBA colors2 = colorSensor2.getNormalizedColors();
+            Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors2.toColor(), hsvValues);
             telemetry.addData("color2", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
@@ -197,7 +206,8 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             patternindividuallive[1] = tempcolo;
 
 
-            NormalizedRGBA colors3 = colorSensor3.getNormalizedColors(); Color.colorToHSV(colors1.toColor(), hsvValues);
+            NormalizedRGBA colors3 = colorSensor3.getNormalizedColors();
+            Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors3.toColor(), hsvValues);
             telemetry.addData("color3", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
@@ -207,56 +217,82 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
             int sleep_time_auto = 500;
             telemetry.addData("patternindividual: ", patternindividual[patnum][partofpattern]);
-            telemetry.addData( "partofpattern: ", partofpattern);
+            telemetry.addData("partofpattern: ", partofpattern);
             if (gamepad1.rightBumperWasPressed()) {
                 if (patternindividuallive[0] == patternindividual[patnum][partofpattern]) {
                     linkage1func(true);
                     sleep(sleep_time_auto);
                     linkage1func(false);
-                    partofpattern = (partofpattern + 1)%3;
+                    partofpattern = (partofpattern + 1) % 3;
+                    sleep(50);
                 } else if (patternindividuallive[1] == patternindividual[patnum][partofpattern]) {
                     linkage2func(true);
                     sleep(sleep_time_auto);
                     linkage2func(false);
-                    partofpattern = (partofpattern + 1)%3;
+                    partofpattern = (partofpattern + 1) % 3;
+                    sleep(50);
                 } else if (patternindividuallive[2] == patternindividual[patnum][partofpattern]) {
                     linkage3func(true);
                     sleep(sleep_time_auto);
                     linkage3func(false);
-                    partofpattern = (partofpattern + 1)%3;
+                    partofpattern = (partofpattern + 1) % 3;
+                    sleep(50);
                 }
                 sleep(sleep_time_auto);
             }
 
 
-
-
-            if (gamepad1.right_trigger == 1) {intakefunc(true);} else {intakefunc(false);}
+            if (gamepad1.right_trigger == 1) {
+                intakefunc(true);
+            } else {
+                intakefunc(false);
+            }
             telemetry.addData("rt: ", gamepad1.right_trigger);
 
-            telemetry.addData("xx: ", linkage1.getPosition());
-            telemetry.addData("aa: ", linkage2.getPosition());
-            telemetry.addData("bb: ", linkage3.getPosition());
 
-            if (gamepad1.x || gamepad1.a || gamepad1.b) {
-                linkage1func(gamepad1.x);
-                telemetry.addData("x: ", gamepad1.x);
-                linkage2func(gamepad1.a);
-                telemetry.addData("a: ", gamepad1.a);
-                linkage3func(gamepad1.b);
-                telemetry.addData("b: ", gamepad1.b);
-            } else if (patternindividuallive[0] == "O") {
-                linkage_1_jitter(true, 200,100);
-            } else if (patternindividuallive[1] == "O") {
-                linkage_2_jitter(true, 200,100);
-            } else if (patternindividuallive[2] == "O") {
-                linkage_3_jitter(true, 200,100);
+            // 1. Check for Manual Overrides (X, A, or B) or Intake Running
+            boolean manualControl = gamepad1.x || gamepad1.a || gamepad1.b;
+            boolean intakeRunning = gamepad1.right_trigger >= 0.9;
+
+            if (intakeRunning) {
+                // Intake is running - keep all servos DOWN so balls can enter
+                linkage1.setPosition(downpos);
+                linkage2.setPosition(downpos);
+                linkage3.setPosition(downpos);
+            } else if (!manualControl) {
+                // 2. If color detected, keep servo DOWN. If no color ("O"), jiggle
+                // First, handle servos with detected colors - keep them DOWN
+                if (!patternindividuallive[0].equals("O")) linkage1.setPosition(downpos);
+                if (!patternindividuallive[1].equals("O")) linkage2.setPosition(downpos);
+                if (!patternindividuallive[2].equals("O")) linkage3.setPosition(downpos);
+
+                // Now handle jiggling for unrecognized colors
+                double time = jiggleTimer.seconds();
+
+                if (time < 0.5) {
+                    // --- PHASE 1: Jiggle UP (First 500ms) ---
+                    if (patternindividuallive[0].equals("O")) linkage1.setPosition(servo_shift_pos_up);
+                    if (patternindividuallive[1].equals("O")) linkage2.setPosition(servo_shift_pos_up);
+                    if (patternindividuallive[2].equals("O")) linkage3.setPosition(servo_shift_pos_up);
+                    telemetry.addData("1","1");
+                }
+                else if (time < 1.0) {
+                    // --- PHASE 2: Jiggle DOWN (Next 500ms) ---
+                    if (patternindividuallive[0].equals("O")) linkage1.setPosition(downpos);
+                    if (patternindividuallive[1].equals("O")) linkage2.setPosition(downpos);
+                    if (patternindividuallive[2].equals("O")) linkage3.setPosition(downpos);
+                    telemetry.addData("0","0");
+                }
+                else {
+                    // --- PHASE 3: Reset Cycle (After 1000ms total) ---
+                    jiggleTimer.reset();
+                }
             } else {
-                linkage_1_jitter(false, 0,0);
-                linkage_2_jitter(false, 0,0);
-                linkage_3_jitter(false, 0,0);
+                // 3. Manual Override logic (Your existing X, A, B buttons)
+                linkage1func(gamepad1.x);
+                linkage2func(gamepad1.a);
+                linkage3func(gamepad1.b);
             }
-
 
 
             //if (gamepad2.dpad_up) {abcdef += 0.01;sleep(10);}
@@ -267,20 +303,25 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             //linkage3.setPosition(abcdef);
             //telemetry.addData("ababababababaabab", abcdef);
 
-            if (gamepad1.right_trigger >= 0.9) {intake.setPower(1);}
+            if (gamepad1.right_trigger >= 0.9) {
+                intake.setPower(1);
+            }
 
 
-            // trying release but might be test
-            if (gamepad1.yWasReleased()) {launcheractive = !launcheractive;}
-            telemetry.addData("launcher toggle: ", launcheractive);
+            // Launcher always runs at low speed to stay warmed up
+            // Y button can still toggle full speed if needed
+            if (gamepad1.yWasReleased()) {
+                launcheractive = !launcheractive;
+            }
+            telemetry.addData("launcher full speed: ", launcheractive);
 
-            // setting launcher power
+            // setting launcher power - always at least 0.3, full speed if toggled
             if (launcheractive) {
                 launcherMotorRight.setPower(1);
                 launcherMotorLeft.setPower(1);
             } else {
-                launcherMotorLeft.setPower(0);
-                launcherMotorRight.setPower(0);
+                launcherMotorLeft.setPower(0.3);
+                launcherMotorRight.setPower(0.3);
             }
 
             //move forward and back
@@ -347,6 +388,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             telemetry.addData("Back  left/Right", JavaUtil.formatNumber(backLeftPower, 4, 2) + ", " + JavaUtil.formatNumber(backRightPower, 4, 2));
             telemetry.update();
         }
+
     }
 
     /**
@@ -400,36 +442,6 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         }
     }
 
-    private void linkage_1_jitter(boolean on, int milli_up, int milli_down) {
-        if (on) {
-            sleep(milli_up);
-            linkage1.setPosition(servo_shift_pos_up);
-            sleep(milli_down);
-            linkage1.setPosition(downpos);
-        } else {
-            linkage1.setPosition(downpos);
-        }
-    }
-
-    private void linkage_2_jitter(boolean on, int milli_up, int milli_down) {
-        if (on) {
-            sleep(milli_up);
-            linkage2.setPosition(servo_shift_pos_up);
-            sleep(milli_down);            linkage2.setPosition(downpos);
-        } else {
-            linkage2.setPosition(downpos);
-        }
-    }
-
-    private void linkage_3_jitter(boolean on, int milli_up, int milli_down) {
-        if (on) {
-            sleep(milli_up);
-            linkage3.setPosition(servo_shift_pos_up);
-            sleep(milli_down);            linkage3.setPosition(downpos);
-        } else {
-            linkage3.setPosition(downpos);
-        }
-    }
 
     public static String determineColor(double h, double s, double v) {
         // Check if hue falls within the green range (85° to 170°)
@@ -445,5 +457,6 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             return "O";
         }
     }
+
 
 }

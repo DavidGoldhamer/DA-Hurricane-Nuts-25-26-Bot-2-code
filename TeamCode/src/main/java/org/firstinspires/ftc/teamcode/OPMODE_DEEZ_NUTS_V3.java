@@ -276,7 +276,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
                     if (patternindividuallive[2].equals("O")) linkage3.setPosition(servo_shift_pos_up);
                     telemetry.addData("1","1");
                 }
-                else if (time < 1.0) {
+                else if (time < 2.0) {
                     // --- PHASE 2: Jiggle DOWN (Next 500ms) ---
                     if (patternindividuallive[0].equals("O")) linkage1.setPosition(downpos);
                     if (patternindividuallive[1].equals("O")) linkage2.setPosition(downpos);
@@ -445,11 +445,11 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
     public static String determineColor(double h, double s, double v) {
         // Check if hue falls within the green range (85° to 170°)
-        if (h >= 75 && h <= 185) {
+        if (h >= 75 && h <= 185 && s >= 0.6 && s >= 0.6 && s <= 0.8) {
             return "g";
         }
         // Check if hue falls within the purple range (260° to 320°)
-        else if (h >= 210 && h <= 320) {
+        else if (h >= 210 && h <= 320 && s >= 0.6 && s <= 0.8) {
             return "p";
         }
         // If it's neither, return "Other"

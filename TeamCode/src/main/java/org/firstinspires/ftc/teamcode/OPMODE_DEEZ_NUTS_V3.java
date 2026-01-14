@@ -85,6 +85,11 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     String tempcolo = "";
 
     private ElapsedTime jiggleTimer = new ElapsedTime();
+    private ElapsedTime linkage1ColorDetectedTimer = new ElapsedTime();
+    private ElapsedTime linkage2ColorDetectedTimer = new ElapsedTime();
+    private ElapsedTime linkage3ColorDetectedTimer = new ElapsedTime();
+
+    private final double COLOR_DETECTED_HOLD_TIME = 2.0; // seconds to keep servo down after color detected
 
     /**
      * This OpMode illustrates driving a 4-motor Omni-Directional (or Holonomic) robot.
@@ -196,6 +201,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[0] = tempcolo;
             patternindividuallive[0] = tempcolo;
+            if (!tempcolo.equals("O")) linkage1ColorDetectedTimer.reset(); // Color detected, start hold timer
 
             NormalizedRGBA colors2 = colorSensor2.getNormalizedColors();
             Color.colorToHSV(colors1.toColor(), hsvValues);
@@ -204,6 +210,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[1] = tempcolo;
             patternindividuallive[1] = tempcolo;
+            if (!tempcolo.equals("O")) linkage2ColorDetectedTimer.reset(); // Color detected, start hold timer
 
 
             NormalizedRGBA colors3 = colorSensor3.getNormalizedColors();
@@ -213,6 +220,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[2] = tempcolo;
             patternindividuallive[2] = tempcolo;
+            if (!tempcolo.equals("O")) linkage3ColorDetectedTimer.reset(); // Color detected, start hold timer
 
 
             int sleep_time_auto = 500;
@@ -260,27 +268,32 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
                 linkage2.setPosition(downpos);
                 linkage3.setPosition(downpos);
             } else if (!manualControl) {
-                // 2. If color detected, keep servo DOWN. If no color ("O"), jiggle
-                // First, handle servos with detected colors - keep them DOWN
-                if (!patternindividuallive[0].equals("O")) linkage1.setPosition(downpos);
-                if (!patternindividuallive[1].equals("O")) linkage2.setPosition(downpos);
-                if (!patternindividuallive[2].equals("O")) linkage3.setPosition(downpos);
+                // 2. If color detected recently (within hold time), keep servo DOWN
+                // Check each linkage individually
+                boolean linkage1HoldActive = linkage1ColorDetectedTimer.seconds() < COLOR_DETECTED_HOLD_TIME;
+                boolean linkage2HoldActive = linkage2ColorDetectedTimer.seconds() < COLOR_DETECTED_HOLD_TIME;
+                boolean linkage3HoldActive = linkage3ColorDetectedTimer.seconds() < COLOR_DETECTED_HOLD_TIME;
 
-                // Now handle jiggling for unrecognized colors
+                // Keep servos down if color was detected OR currently detecting color
+                if (!patternindividuallive[0].equals("O") || linkage1HoldActive) linkage1.setPosition(downpos);
+                if (!patternindividuallive[1].equals("O") || linkage2HoldActive) linkage2.setPosition(downpos);
+                if (!patternindividuallive[2].equals("O") || linkage3HoldActive) linkage3.setPosition(downpos);
+
+                // Now handle jiggling for unrecognized colors (only if hold time expired)
                 double time = jiggleTimer.seconds();
 
-                if (time < 0.5) {
+                if (time < 1.0) {
                     // --- PHASE 1: Jiggle UP (First 500ms) ---
-                    if (patternindividuallive[0].equals("O")) linkage1.setPosition(servo_shift_pos_up);
-                    if (patternindividuallive[1].equals("O")) linkage2.setPosition(servo_shift_pos_up);
-                    if (patternindividuallive[2].equals("O")) linkage3.setPosition(servo_shift_pos_up);
+                    if (patternindividuallive[0].equals("O") && !linkage1HoldActive) linkage1.setPosition(servo_shift_pos_up);
+                    if (patternindividuallive[1].equals("O") && !linkage2HoldActive) linkage2.setPosition(servo_shift_pos_up);
+                    if (patternindividuallive[2].equals("O") && !linkage3HoldActive) linkage3.setPosition(servo_shift_pos_up);
                     telemetry.addData("1","1");
                 }
                 else if (time < 2.0) {
                     // --- PHASE 2: Jiggle DOWN (Next 500ms) ---
-                    if (patternindividuallive[0].equals("O")) linkage1.setPosition(downpos);
-                    if (patternindividuallive[1].equals("O")) linkage2.setPosition(downpos);
-                    if (patternindividuallive[2].equals("O")) linkage3.setPosition(downpos);
+                    if (patternindividuallive[0].equals("O") && !linkage1HoldActive) linkage1.setPosition(downpos);
+                    if (patternindividuallive[1].equals("O") && !linkage2HoldActive) linkage2.setPosition(downpos);
+                    if (patternindividuallive[2].equals("O") && !linkage3HoldActive) linkage3.setPosition(downpos);
                     telemetry.addData("0","0");
                 }
                 else {
@@ -445,11 +458,11 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
     public static String determineColor(double h, double s, double v) {
         // Check if hue falls within the green range (85° to 170°)
-        if (h >= 75 && h <= 185 && s >= 0.6 && s >= 0.6 && s <= 0.8) {
+        if (h >= 75 && h <= 185) {
             return "g";
         }
         // Check if hue falls within the purple range (260° to 320°)
-        else if (h >= 210 && h <= 320 && s >= 0.6 && s <= 0.8) {
+        else if (h >= 210 && h <= 320) {
             return "p";
         }
         // If it's neither, return "Other"

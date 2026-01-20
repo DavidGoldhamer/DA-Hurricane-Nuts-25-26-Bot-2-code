@@ -91,6 +91,16 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
     private final double COLOR_DETECTED_HOLD_TIME = 2.0; // seconds to keep servo down after color detected
 
+    // Track if each position has a ball with known color (locked until launched)
+    private boolean ballLocked1 = false;
+    private boolean ballLocked2 = false;
+    private boolean ballLocked3 = false;
+
+    // Store the locked color to detect if ball moved/changed
+    private String lockedColor1 = "";
+    private String lockedColor2 = "";
+    private String lockedColor3 = "";
+
     /**
      * This OpMode illustrates driving a 4-motor Omni-Directional (or Holonomic) robot.
      * This code will work with either a Mecanum-Drive or an X-Drive train.

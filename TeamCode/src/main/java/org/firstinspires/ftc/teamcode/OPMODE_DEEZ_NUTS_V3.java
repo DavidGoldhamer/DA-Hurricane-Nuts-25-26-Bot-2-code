@@ -62,7 +62,16 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
     double servo_shift_pos_up = 0.76;
 
-    private final String[] pattern = {"ppg", "pgp", "gpp"};
+    // Distance threshold (cm) - ball is considered present if closer than this
+    // distance 6, 1.5,
+    double BALL_PRESENT_DISTANCE_CM = 4.0;
+
+    private final String[] pattern = {"gpp", "pgp", "ppg"};
+    private final String[] fullbar_color_pattern = {
+            "🟩🟩🟩🟩🟩🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪",
+            "🟪🟪🟪🟪🟪🟩🟩🟩🟩🟩🟪🟪🟪🟪🟪",
+            "🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪🟩🟩🟩🟩🟩"
+    };
 
     private int partofpattern = 0;
 
@@ -101,6 +110,23 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     private String lockedColor2 = "";
     private String lockedColor3 = "";
 
+
+
+    // GAMEPAD 2 TOGGLE DEBUG
+    boolean jiggle_lb = false;
+    boolean launcher_toggle_y = false;
+    boolean stick_rightstickbutton = false;
+    boolean dpad_dpadup = false;
+    boolean movement_leftstickbutton = false;
+    boolean righttrigger_rt = false;
+    boolean rightbumper_rb = false;
+    boolean color_distance_x = false;
+    boolean locked_a = false;
+    boolean patterndisp_b = false;
+    boolean toggleall_lt = false;
+    boolean colorpattern = true;
+    boolean temp = false;
+
     /**
      * This OpMode illustrates driving a 4-motor Omni-Directional (or Holonomic) robot.
      * This code will work with either a Mecanum-Drive or an X-Drive train.
@@ -130,6 +156,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         double incrempad = 0.2;
 
         boolean launcheractive = false;
+        boolean launcheroff = false;
 
 
         intake = hardwareMap.get(CRServoImplEx.class, "intake");
@@ -189,8 +216,59 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         int temppatnum = 0;
         // Run until the end of the match (driver presses STOP)
         while (opModeIsActive()) {
-            // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
             // Note: pushing stick forward gives negative value
+
+
+            // GAMEPAD 2 DEBUGING
+            if (gamepad2.leftBumperWasReleased() || toggleall_lt) {
+                jiggle_lb = !jiggle_lb;
+                temp = true;
+            }
+            if (gamepad2.yWasReleased() || toggleall_lt) {
+                launcher_toggle_y = !launcher_toggle_y;
+                temp = true;
+            }
+            if (gamepad2.rightStickButtonWasReleased() || toggleall_lt) {
+                stick_rightstickbutton = !stick_rightstickbutton;
+                temp = true;
+            }
+            if (gamepad2.dpadUpWasReleased() || toggleall_lt) {
+                dpad_dpadup = !dpad_dpadup;
+                temp = true;
+            }
+            if (gamepad2.leftStickButtonWasReleased() || toggleall_lt) {
+                movement_leftstickbutton = !movement_leftstickbutton;
+                temp = true;
+            }
+            if (gamepad2.dpadRightWasReleased() || toggleall_lt) {
+                righttrigger_rt = !righttrigger_rt;
+                temp = true;
+            }
+            if (gamepad2.rightBumperWasReleased() || toggleall_lt) {
+                rightbumper_rb = !rightbumper_rb;
+                temp = true;
+            }
+            if (gamepad2.xWasReleased() || toggleall_lt) {
+                color_distance_x = !color_distance_x;
+                temp = true;
+            }
+            if (gamepad2.aWasReleased() || toggleall_lt) {
+                locked_a = !locked_a;
+                temp = true;
+            }
+            if (gamepad2.bWasReleased() || toggleall_lt) {
+                patterndisp_b = !patterndisp_b;
+                temp = true;
+            }
+            if (gamepad2.dpadLeftWasReleased() || toggleall_lt) {
+                toggleall_lt = !toggleall_lt;
+                temp = true;
+            }
+            if (temp){
+                colorpattern = !colorpattern;
+                temp = false;
+            }
+
 
             // inccrement through the array for patterns
             if (gamepad1.leftBumperWasPressed()) {
@@ -198,44 +276,130 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
                 patnum = temppatnum % 3;
                 partofpattern = 0;
             }
-            telemetry.addData("left bumper counter (patnum)", patnum);
+            // right bumper
+            if (rightbumper_rb) {
+                telemetry.addData("right bumper counter (patnum)", patnum);
+            }
 
             //actually launch sort
             //if (gamepad1.rightBumperWasPressed()) {
             //}
 
+            // Color Sensor 1 - Check distance and color
             NormalizedRGBA colors1 = colorSensor1.getNormalizedColors();
             Color.colorToHSV(colors1.toColor(), hsvValues);
-            Color.colorToHSV(colors1.toColor(), hsvValues);
-            telemetry.addData("color1", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+            double distance1 = ((DistanceSensor) colorSensor1).getDistance(DistanceUnit.CM);
+            // color distance
+            if (color_distance_x) {
+                telemetry.addData("color1", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+                telemetry.addData("distance1", distance1);
+            }
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[0] = tempcolo;
             patternindividuallive[0] = tempcolo;
-            if (!tempcolo.equals("O")) linkage1ColorDetectedTimer.reset(); // Color detected, start hold timer
 
+            // Lock ball 1 if ball present (close distance) AND color detected
+            if (distance1 < BALL_PRESENT_DISTANCE_CM && !tempcolo.equals("O")) {
+                if (!ballLocked1) {
+                    ballLocked1 = true;
+                    lockedColor1 = tempcolo;
+                }
+                linkage1ColorDetectedTimer.reset();
+            } else if (distance1 >= BALL_PRESENT_DISTANCE_CM) {
+                // Ball is gone - unlock
+                ballLocked1 = false;
+                lockedColor1 = "";
+            }
+
+            // Color Sensor 2 - Check distance and color
             NormalizedRGBA colors2 = colorSensor2.getNormalizedColors();
-            Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors2.toColor(), hsvValues);
-            telemetry.addData("color2", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+            double distance2 = ((DistanceSensor) colorSensor2).getDistance(DistanceUnit.CM);
+            if (color_distance_x) {
+                telemetry.addData("color2", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+                telemetry.addData("distance2", distance2);
+            }
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[1] = tempcolo;
             patternindividuallive[1] = tempcolo;
-            if (!tempcolo.equals("O")) linkage2ColorDetectedTimer.reset(); // Color detected, start hold timer
 
+            // Lock ball 2 if ball present (close distance) AND color detected
+            if (distance2 < BALL_PRESENT_DISTANCE_CM && !tempcolo.equals("O")) {
+                if (!ballLocked2) {
+                    ballLocked2 = true;
+                    lockedColor2 = tempcolo;
+                }
+                linkage2ColorDetectedTimer.reset();
+            } else if (distance2 >= BALL_PRESENT_DISTANCE_CM) {
+                // Ball is gone - unlock
+                ballLocked2 = false;
+                lockedColor2 = "";
+            }
 
+            // Color Sensor 3 - Check distance and color
             NormalizedRGBA colors3 = colorSensor3.getNormalizedColors();
-            Color.colorToHSV(colors1.toColor(), hsvValues);
             Color.colorToHSV(colors3.toColor(), hsvValues);
-            telemetry.addData("color3", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+            double distance3 = ((DistanceSensor) colorSensor3).getDistance(DistanceUnit.CM);
+            if (color_distance_x) {
+                telemetry.addData("color3", determineColor(hsvValues[0], hsvValues[1], hsvValues[2]));
+                telemetry.addData("distance3", distance3);
+            }
             tempcolo = determineColor(hsvValues[0], hsvValues[1], hsvValues[2]);
             patternraw[2] = tempcolo;
             patternindividuallive[2] = tempcolo;
-            if (!tempcolo.equals("O")) linkage3ColorDetectedTimer.reset(); // Color detected, start hold timer
+
+            // Lock ball 3 if ball present (close distance) AND color detected
+            if (distance3 < BALL_PRESENT_DISTANCE_CM && !tempcolo.equals("O")) {
+                if (!ballLocked3) {
+                    ballLocked3 = true;
+                    lockedColor3 = tempcolo;
+                }
+                linkage3ColorDetectedTimer.reset();
+            } else if (distance3 >= BALL_PRESENT_DISTANCE_CM) {
+                // Ball is gone - unlock
+                ballLocked3 = false;
+                lockedColor3 = "";
+            }
+
+            // Display lock status
+            // locked
+            if (locked_a) {
+                telemetry.addData("Ball Locked 1", ballLocked1 ? lockedColor1 : "No");
+                telemetry.addData("Ball Locked 2", ballLocked2 ? lockedColor2 : "No");
+                telemetry.addData("Ball Locked 3", ballLocked3 ? lockedColor3 : "No");
+            }
 
 
             int sleep_time_auto = 500;
-            telemetry.addData("patternindividual: ", patternindividual[patnum][partofpattern]);
-            telemetry.addData("partofpattern: ", partofpattern);
+            // pattern disp
+            if (patterndisp_b) {
+                telemetry.addData("full pattern", pattern[patnum]);
+                telemetry.addData("patternindividual (current color to launch): ", patternindividual[patnum][partofpattern]);
+                telemetry.addData("partofpattern: ", partofpattern);
+            }
+
+            if (colorpattern) {
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+                telemetry.addLine(fullbar_color_pattern[patnum]);
+            }
+
             if (gamepad1.rightBumperWasPressed()) {
                 if (patternindividuallive[0] == patternindividual[patnum][partofpattern]) {
                     linkage1func(true);
@@ -265,7 +429,10 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             } else {
                 intakefunc(false);
             }
-            telemetry.addData("rt: ", gamepad1.right_trigger);
+            // right trigger
+            if (righttrigger_rt) {
+                telemetry.addData("Right Trigger: ", gamepad1.right_trigger);
+            }
 
 
             // 1. Check for Manual Overrides (X, A, or B) or Intake Running
@@ -278,36 +445,33 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
                 linkage2.setPosition(downpos);
                 linkage3.setPosition(downpos);
             } else if (!manualControl) {
-                // 2. If color detected recently (within hold time), keep servo DOWN
-                // Check each linkage individually
-                boolean linkage1HoldActive = linkage1ColorDetectedTimer.seconds() < COLOR_DETECTED_HOLD_TIME;
-                boolean linkage2HoldActive = linkage2ColorDetectedTimer.seconds() < COLOR_DETECTED_HOLD_TIME;
-                boolean linkage3HoldActive = linkage3ColorDetectedTimer.seconds() < COLOR_DETECTED_HOLD_TIME;
+                // 2. If ball is locked (confirmed present with known color), keep servo DOWN and DON'T jiggle
+                // Keep servos down if ball is locked
+                if (ballLocked1) linkage1.setPosition(downpos);
+                if (ballLocked2) linkage2.setPosition(downpos);
+                if (ballLocked3) linkage3.setPosition(downpos);
 
-                // Keep servos down if color was detected OR currently detecting color
-                if (!patternindividuallive[0].equals("O") || linkage1HoldActive) linkage1.setPosition(downpos);
-                if (!patternindividuallive[1].equals("O") || linkage2HoldActive) linkage2.setPosition(downpos);
-                if (!patternindividuallive[2].equals("O") || linkage3HoldActive) linkage3.setPosition(downpos);
-
-                // Now handle jiggling for unrecognized colors (only if hold time expired)
+                // Now handle jiggling ONLY for unlocked positions
                 double time = jiggleTimer.seconds();
 
                 if (time < 1.0) {
-                    // --- PHASE 1: Jiggle UP (First 500ms) ---
-                    if (patternindividuallive[0].equals("O") && !linkage1HoldActive) linkage1.setPosition(servo_shift_pos_up);
-                    if (patternindividuallive[1].equals("O") && !linkage2HoldActive) linkage2.setPosition(servo_shift_pos_up);
-                    if (patternindividuallive[2].equals("O") && !linkage3HoldActive) linkage3.setPosition(servo_shift_pos_up);
-                    telemetry.addData("1","1");
+                    // --- PHASE 1: Jiggle UP (First 1 second) ---
+                    if (!ballLocked1) linkage1.setPosition(servo_shift_pos_up);
+                    if (!ballLocked2) linkage2.setPosition(servo_shift_pos_up);
+                    if (!ballLocked3) linkage3.setPosition(servo_shift_pos_up);
+                    // jiggle
+                    if (jiggle_lb){telemetry.addData("Jiggle Phase","UP");}
                 }
                 else if (time < 2.0) {
-                    // --- PHASE 2: Jiggle DOWN (Next 500ms) ---
-                    if (patternindividuallive[0].equals("O") && !linkage1HoldActive) linkage1.setPosition(downpos);
-                    if (patternindividuallive[1].equals("O") && !linkage2HoldActive) linkage2.setPosition(downpos);
-                    if (patternindividuallive[2].equals("O") && !linkage3HoldActive) linkage3.setPosition(downpos);
-                    telemetry.addData("0","0");
+                    // --- PHASE 2: Jiggle DOWN (Next 1 second) ---
+                    if (!ballLocked1) linkage1.setPosition(downpos);
+                    if (!ballLocked2) linkage2.setPosition(downpos);
+                    if (!ballLocked3) linkage3.setPosition(downpos);
+                    // jiggle
+                    if (jiggle_lb){telemetry.addData("Jiggle Phase","DOWN");}
                 }
                 else {
-                    // --- PHASE 3: Reset Cycle (After 1000ms total) ---
+                    // --- PHASE 3: Reset Cycle (After 2 seconds total) ---
                     jiggleTimer.reset();
                 }
             } else {
@@ -336,62 +500,80 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             if (gamepad1.yWasReleased()) {
                 launcheractive = !launcheractive;
             }
-            telemetry.addData("launcher full speed: ", launcheractive);
+            if (gamepad1.rightStickButtonWasReleased()) {
+                launcheroff = !launcheroff;
+            }
+
+
+            // launchertoggle
+            if (launcher_toggle_y){telemetry.addData("launcher full speed: ", launcheractive);}
 
             // setting launcher power - always at least 0.3, full speed if toggled
-            if (launcheractive) {
-                launcherMotorRight.setPower(1);
-                launcherMotorLeft.setPower(1);
+            double launcher_percent = 0.8;
+            if (gamepad1.left_stick_button) {
+                launcherMotorLeft.setPower(-0.1);
+                launcherMotorRight.setPower(-0.1);
             } else {
-                launcherMotorLeft.setPower(0.3);
-                launcherMotorRight.setPower(0.3);
+                if (launcheractive) {
+                    launcherMotorRight.setPower(launcher_percent);
+                    launcherMotorLeft.setPower(launcher_percent);
+                } else {
+                    if (!launcheroff) {
+                        launcherMotorLeft.setPower(0.3);
+                        launcherMotorRight.setPower(0.3);
+                    } else {
+                        launcherMotorLeft.setPower(0);
+                        launcherMotorRight.setPower(0);
+                    }
+
+                }
             }
 
             //move forward and back
             if (gamepad1.dpad_down || gamepad1.dpad_up) {
-                telemetry.addData("up/down:  ", "true");
-                //dpad up
                 if (gamepad1.dpad_up) {
                     axial = incrempad;
-                    telemetry.addData("up:  ", axial);
+                    // dpad
+                    if (dpad_dpadup){telemetry.addData("up:  ", axial);}
                     //dpad down \/
                 } else if (gamepad1.dpad_down) {
                     axial = -incrempad;
-                    telemetry.addData("down:  ", axial);
+                    if (dpad_dpadup){telemetry.addData("down:  ", axial);}
                 }
             } else {
                 // gamepad stick to move forwards and back
                 axial = -gamepad1.left_stick_y;
-                telemetry.addData("stick:  ", axial);
+                // stick
+                if (stick_rightstickbutton){telemetry.addData("stick:  ", axial);}
             }
 
 
             //drift left and right
             if (gamepad1.dpad_left || gamepad1.dpad_right) {
-                telemetry.addData("left/right:  ", "true");
-                //dpad left
                 if (gamepad1.dpad_left) {
                     lateral = -incrempad;
-                    telemetry.addData("left:  ", lateral);
+                    // dpad
+                    if (dpad_dpadup){telemetry.addData("left:  ", lateral);}
                     //dpad right \/
                 } else if (gamepad1.dpad_right) {
                     lateral = incrempad;
-                    telemetry.addData("right:  ", lateral);
+                    if (dpad_dpadup) {telemetry.addData("right:  ", lateral);}
                 }
             } else {
-                // gamepad stick to drift
+                // gamepad stick to drift OR SOMTHING
                 lateral = gamepad1.left_stick_x;
-                telemetry.addData("stick:  ", lateral);
+                // stick
+                if (stick_rightstickbutton){telemetry.addData("stick:  ", lateral);}
             }
 
             yaw = gamepad1.right_stick_x;
-            // Combine the joystick requests for each axis-motion to determine each wheel's power.
-            // Set up a variable for each drive wheel to save the power level for telemetry.
+            // Combine the ADNUEOAYWIMBYAXNIXONAENOADSIU stseuqer for each axis-motion to determine each wheel's power.
+            // Set up a variable for each drive wheel to save DAIUGOWGDMYVQIDQYIUADNHS power level for telemetry.
             frontLeftPower = axial + lateral + yaw;
             frontRightPower = (axial - lateral) - yaw;
             backLeftPower = (axial - lateral) + yaw;
             backRightPower = (axial + lateral) - yaw;
-            // Normalize the values so no wheel power exceeds 100%
+            // Normalize the values so no wheel power exceeds 100% REEEEERAIUAKDHWOADNHOMQXNJW
             // This ensures that the robot maintains the desired motion.
             max = JavaUtil.maxOfList(JavaUtil.createListWith(Math.abs(frontLeftPower), Math.abs(frontRightPower), Math.abs(backLeftPower), Math.abs(backRightPower)));
             if (max > 1) {
@@ -406,24 +588,20 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             backLeftDrive.setPower(backLeftPower);
             backRightDrive.setPower(backRightPower);
             // Show the elapsed game time and wheel power.
+            // Always enabled
             telemetry.addData("Status", "Run Time: " + runtime);
-            telemetry.addData("Front left/Right", JavaUtil.formatNumber(frontLeftPower, 4, 2) + ", " + JavaUtil.formatNumber(frontRightPower, 4, 2));
-            telemetry.addData("Back  left/Right", JavaUtil.formatNumber(backLeftPower, 4, 2) + ", " + JavaUtil.formatNumber(backRightPower, 4, 2));
+            // movement
+            if (movement_leftstickbutton) {
+                telemetry.addData("Front left/Right", JavaUtil.formatNumber(frontLeftPower, 4, 2) + ", " + JavaUtil.formatNumber(frontRightPower, 4, 2));
+                telemetry.addData("Back  left/Right", JavaUtil.formatNumber(backLeftPower, 4, 2) + ", " + JavaUtil.formatNumber(backRightPower, 4, 2));
+            }
             telemetry.update();
         }
 
     }
 
     /**
-     * This function is used to test your motor directions.
-     *
-     * Each button should make the corresponding motor run FORWARD.
-     *
-     *   1) First get all the motors to take to correct positions on the robot
-     *      by adjusting your Robot Configuration if necessary.
-     *
-     *   2) Then make sure they run in the correct direction by modifying the
-     *      the setDirection() calls above.
+     * EEEEEEEe3E3EE#EYE^
      */
     private void testMotorDirections() {
         frontLeftPower = gamepad1.x ? 1 : 0;
@@ -467,7 +645,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
 
 
     public static String determineColor(double h, double s, double v) {
-        // Check if hue falls within the green range (85° to 170°)
+        // Check if hue falls within the green range (85° to 170°) FUCKFFUFUFFUUFUFUFFFFFFF
         if (h >= 75 && h <= 185) {
             return "g";
         }

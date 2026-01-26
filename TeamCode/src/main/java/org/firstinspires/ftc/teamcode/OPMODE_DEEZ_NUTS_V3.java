@@ -509,7 +509,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             if (launcher_toggle_y){telemetry.addData("launcher full speed: ", launcheractive);}
 
             // setting launcher power - always at least 0.3, full speed if toggled
-            double launcher_percent = 0.8;
+            double launcher_percent = 0.70;
             if (gamepad1.left_stick_button) {
                 launcherMotorLeft.setPower(-0.1);
                 launcherMotorRight.setPower(-0.1);

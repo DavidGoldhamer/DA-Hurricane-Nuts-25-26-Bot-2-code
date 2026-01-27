@@ -153,7 +153,9 @@ public class Auto_blue extends LinearOpMode {
             }
 
             if (patternDetected) {
-                rotateCounterClockwise(100, 300);
+                strafeRight(100,100);
+                sleep(100);
+                rotateCounterClockwise(100, 110);
             }
 
             // PHASE 2: Jiggle to settle balls
@@ -162,7 +164,7 @@ public class Auto_blue extends LinearOpMode {
                 telemetry.update();
 
                 // Jiggle cycle to settle balls (3 full cycles)
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < 6; i++) {
                     // Jiggle UP
                     linkage1.setPosition(0.76);
                     linkage2.setPosition(0.76);
@@ -227,6 +229,7 @@ public class Auto_blue extends LinearOpMode {
                     telemetry.update();
 
                     // Check which position has the correct ball and launch it
+                    sleep(1000);
                     if (patternindividuallive[0].equals(patternindividual[patnum][partofpattern])) {
                         telemetry.addData("Launching", "Position 1");
                         telemetry.update();
@@ -266,6 +269,8 @@ public class Auto_blue extends LinearOpMode {
                 telemetry.addData("Status", "No AprilTag detected - autonomous stopped");
                 telemetry.update();
             }
+
+            strafeRight(100,250);
 
             // Keep running until stop is pressed
             while (opModeIsActive()) {

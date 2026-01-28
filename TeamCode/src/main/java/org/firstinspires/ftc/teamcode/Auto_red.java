@@ -153,9 +153,9 @@ public class Auto_red extends LinearOpMode {
             }
 
             if (patternDetected) {
-                strafeLeft(100,100);
+                strafeRight(100,100);
                 sleep(100);
-                rotateClockwise(100, 110);
+                rotateCounterClockwise(100, 120);
             }
 
             // PHASE 2: Jiggle to settle balls
@@ -169,21 +169,21 @@ public class Auto_red extends LinearOpMode {
                     linkage1.setPosition(0.76);
                     linkage2.setPosition(0.76);
                     linkage3.setPosition(0.76);
-                    sleep(1000);
+                    sleep(250);
 
                     // Jiggle DOWN
                     linkage1.setPosition(downpos);
                     linkage2.setPosition(downpos);
                     linkage3.setPosition(downpos);
-                    sleep(1000);
+                    sleep(900);
                 }
 
                 // PHASE 3: Spin up launcher
                 telemetry.addData("Phase", "Spinning up launcher...");
                 telemetry.update();
 
-                launcherMotorLeft.setPower(0.7);
-                launcherMotorRight.setPower(0.7);
+                launcherMotorLeft.setPower(0.76);
+                launcherMotorRight.setPower(0.76);
                 sleep(2000); // Give launcher time to spin up
 
                 // PHASE 4: Detect ball colors and launch in order
@@ -270,7 +270,7 @@ public class Auto_red extends LinearOpMode {
                 telemetry.update();
             }
 
-            strafeRight(100,300);
+            strafeRight(100,500);
 
             // Keep running until stop is pressed
             while (opModeIsActive()) {

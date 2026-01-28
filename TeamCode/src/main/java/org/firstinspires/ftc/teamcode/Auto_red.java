@@ -21,8 +21,8 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 
-@Autonomous(name = "Blue Auto", group = "Blue")
-public class Auto_blue extends LinearOpMode {
+@Autonomous(name = "Red Auto", group = "Red")
+public class Auto_red extends LinearOpMode {
 
     private static final boolean USE_WEBCAM = true;
 
@@ -153,9 +153,9 @@ public class Auto_blue extends LinearOpMode {
             }
 
             if (patternDetected) {
-                strafeRight(100,100);
+                strafeLeft(100,100);
                 sleep(100);
-                rotateCounterClockwise(100, 110);
+                rotateClockwise(100, 110);
             }
 
             // PHASE 2: Jiggle to settle balls
@@ -182,8 +182,8 @@ public class Auto_blue extends LinearOpMode {
                 telemetry.addData("Phase", "Spinning up launcher...");
                 telemetry.update();
 
-                launcherMotorLeft.setPower(0.73);
-                launcherMotorRight.setPower(0.73);
+                launcherMotorLeft.setPower(0.7);
+                launcherMotorRight.setPower(0.7);
                 sleep(2000); // Give launcher time to spin up
 
                 // PHASE 4: Detect ball colors and launch in order
@@ -270,7 +270,7 @@ public class Auto_blue extends LinearOpMode {
                 telemetry.update();
             }
 
-            strafeRight(100,500);
+            strafeRight(100,300);
 
             // Keep running until stop is pressed
             while (opModeIsActive()) {

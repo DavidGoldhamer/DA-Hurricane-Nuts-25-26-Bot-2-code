@@ -188,7 +188,7 @@ public class Auto_blue extends LinearOpMode {
                 telemetry.addData("Phase", "Spinning up launcher...");
                 telemetry.update();
 
-                double launcher_power = 0.67;
+                double launcher_power = 0.68;
                 launcherMotorLeft.setPower(launcher_power);
                 launcherMotorRight.setPower(launcher_power);
                 sleep(2000); // Give launcher time to spin up

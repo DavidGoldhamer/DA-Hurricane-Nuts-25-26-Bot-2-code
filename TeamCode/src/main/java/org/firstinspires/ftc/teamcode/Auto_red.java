@@ -52,6 +52,10 @@ public class Auto_red extends LinearOpMode {
     // Distance threshold for ball detection
     double BALL_PRESENT_DISTANCE_CM = 4.0;
 
+    public static final String PATTERN_KEY = "PATTERN_KEY";
+
+    Object PATTERN_BOARD = blackboard.getOrDefault(PATTERN_KEY, 0);
+
     // Pattern definitions
     private final String[] pattern = {"gpp", "pgp", "ppg"};
     private final String[][] patternindividual = {
@@ -136,6 +140,8 @@ public class Auto_red extends LinearOpMode {
                             patternDetected = true;
                         }
 
+                        blackboard.put(PATTERN_KEY, patnum);
+
                         if (patternDetected) {
                             telemetry.addData("AprilTag Detected", "ID %d", detection.id);
                             telemetry.addData("Pattern Set", patnum);
@@ -155,7 +161,7 @@ public class Auto_red extends LinearOpMode {
             if (patternDetected) {
                 strafeRight(100,100);
                 sleep(100);
-                rotateCounterClockwise(100, 120);
+                rotateClockwise(100, 115);
             }
 
             // PHASE 2: Jiggle to settle balls
@@ -163,27 +169,28 @@ public class Auto_red extends LinearOpMode {
                 telemetry.addData("Phase", "Jiggling to settle balls...");
                 telemetry.update();
 
-                // Jiggle cycle to settle balls (3 full cycles)
-                for (int i = 0; i < 6; i++) {
-                    // Jiggle UP
-                    linkage1.setPosition(0.76);
-                    linkage2.setPosition(0.76);
-                    linkage3.setPosition(0.76);
-                    sleep(250);
-
-                    // Jiggle DOWN
-                    linkage1.setPosition(downpos);
-                    linkage2.setPosition(downpos);
-                    linkage3.setPosition(downpos);
-                    sleep(900);
-                }
+                // Jiggle cycle to settle balls (7 full cycles)
+//                for (int i = 0; i < 6; i++) {
+//                    // Jiggle UP
+//                    linkage1.setPosition(0.76);
+//                    linkage2.setPosition(0.76);
+//                    linkage3.setPosition(0.76);
+//                    sleep(250);
+//
+//                    // Jiggle DOWN
+//                    linkage1.setPosition(downpos);
+//                    linkage2.setPosition(downpos);
+//                    linkage3.setPosition(downpos);
+//                    sleep(900);
+//                }
 
                 // PHASE 3: Spin up launcher
                 telemetry.addData("Phase", "Spinning up launcher...");
                 telemetry.update();
 
-                launcherMotorLeft.setPower(0.76);
-                launcherMotorRight.setPower(0.76);
+                double launcher_power = 0.67;
+                launcherMotorLeft.setPower(launcher_power);
+                launcherMotorRight.setPower(launcher_power);
                 sleep(2000); // Give launcher time to spin up
 
                 // PHASE 4: Detect ball colors and launch in order
@@ -228,6 +235,26 @@ public class Auto_red extends LinearOpMode {
                     telemetry.addData("Part of pattern", "%d/3", partofpattern + 1);
                     telemetry.update();
 
+                    double dist = 5.5;
+                    if (distance1 < dist && patternindividuallive[0] == "O") {
+                        linkage1.setPosition(0.76);
+                        sleep(200);
+                        linkage1.setPosition(downpos);
+                        sleep(200);
+                    }
+                    if (distance2 < dist && patternindividuallive[1] == "O") {
+                        linkage2.setPosition(0.76);
+                        sleep(200);
+                        linkage2.setPosition(downpos);
+                        sleep(200);
+                    }
+                    if (distance3 < dist && patternindividuallive[2] == "O") {
+                        linkage3.setPosition(0.76);
+                        sleep(200);
+                        linkage3.setPosition(downpos);
+                        sleep(200);
+                    }
+
                     // Check which position has the correct ball and launch it
                     sleep(1000);
                     if (patternindividuallive[0].equals(patternindividual[patnum][partofpattern])) {
@@ -270,7 +297,7 @@ public class Auto_red extends LinearOpMode {
                 telemetry.update();
             }
 
-            strafeRight(100,500);
+            strafeRight(100,432);
 
             // Keep running until stop is pressed
             while (opModeIsActive()) {

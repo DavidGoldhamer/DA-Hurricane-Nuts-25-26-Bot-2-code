@@ -66,6 +66,10 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     // distance 6, 1.5,
     double BALL_PRESENT_DISTANCE_CM = 4.0;
 
+    public static final String PATTERN_KEY = "PATTERN_KEY";
+
+    Object PATTERN_BOARD = blackboard.getOrDefault(PATTERN_KEY, 0);
+
     private final String[] pattern = {"gpp", "pgp", "ppg"};
     private final String[] fullbar_color_pattern = {
             "🟩🟩🟩🟩🟩🟪🟪🟪🟪🟪🟪🟪🟪🟪🟪",
@@ -84,7 +88,6 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
     private String[] patternindividuallive = {"","",""};
 
     private int patnum = 0;
-
 
 
     private double abcdef = 1;
@@ -211,6 +214,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        patnum = (int) blackboard.getOrDefault(PATTERN_KEY, 0);
         waitForStart();
         runtime.reset();
         int temppatnum = 0;
@@ -509,7 +513,7 @@ public class OPMODE_DEEZ_NUTS_V3 extends LinearOpMode {
             if (launcher_toggle_y){telemetry.addData("launcher full speed: ", launcheractive);}
 
             // setting launcher power - always at least 0.3, full speed if toggled
-            double launcher_percent = 0.70;
+            double launcher_percent = 0.65;
             if (gamepad1.left_stick_button) {
                 launcherMotorLeft.setPower(-0.1);
                 launcherMotorRight.setPower(-0.1);
